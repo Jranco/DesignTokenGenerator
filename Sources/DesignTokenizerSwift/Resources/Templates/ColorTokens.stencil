@@ -1,0 +1,21 @@
+// Generated file — do not edit manually.
+import UIKit
+
+{% for file in colorAssetFiles %}
+// MARK: - {{ file.name }}
+
+extension UIColor {
+    struct {{ file.name | swiftTypeName }} {
+        {% for color in file.colors %}
+        static var {{ color.name | swiftVarName }}: UIColor {
+            UIColor(named: "{{ color.name }}", in: .module, compatibleWith: nil)!
+        }
+        {% endfor %}
+		{% if file.boundColors %}
+		{% for boundColor in file.boundColors %}
+		static var {{ boundColor.name | swiftVarName }} = UIColor.{{ boundColor.boundedColorName }}
+		{% endfor %}
+		{% endif %}
+    }
+}
+{% endfor %}

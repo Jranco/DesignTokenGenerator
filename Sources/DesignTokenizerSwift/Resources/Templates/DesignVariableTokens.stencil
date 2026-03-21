@@ -1,0 +1,21 @@
+// Generated file — DO NOT EDIT
+// swiftlint:disable all
+
+import Foundation
+
+{% for enum in enums %}
+enum {{ enum.name }} {
+{% for token in enum.tokens %}
+{% if token.boolValue %}
+    static let {{ token.name }}: Bool = {{ token.boolValue }}
+{% endif %}
+{% if token.numberValue %}
+    static let {{ token.name }}: Double = {{ token.numberValue }}
+{% endif %}
+{% if token.stringValue %}
+    static let {{ token.name }}: String = "{{ token.stringValue }}"
+{% endif %}
+{% endfor %}
+}
+
+{% endfor %}

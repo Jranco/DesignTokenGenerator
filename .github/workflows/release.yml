@@ -1,0 +1,76 @@
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Check commit message for --release
+        id: check
+        run: |
+          MSG="${{ github.event.head_commit.message }}"
+          if echo "$MSG" | grep -q "\-\-release"; then
+            VERSION=$(echo "$MSG" | grep -oP '(?<=--release )\S+')
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+  release:
+    needs: check-release
+    if: needs.check-release.outputs.should_release == 'true'
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+
+      - name: Build release binary
+        run: swift build -c release --arch arm64 --arch x86_64
+
+      - name: Compress binary and bundle
+        run: |
+          BINARY_NAME="DesignTokenGenerator"
+          BUNDLE_NAME="${BINARY_NAME}_${BINARY_NAME}.bundle"
+          VERSION=${{ needs.check-release.outputs.version }}
+          mkdir release_output
+          cp .build/apple/Products/Release/$BINARY_NAME release_output/
+          cp -r .build/apple/Products/Release/$BUNDLE_NAME release_output/
+          zip -r ${BINARY_NAME}_${VERSION}.zip release_output/
+
+      - name: Create release branch
+        run: |
+          VERSION=${{ needs.check-release.outputs.version }}
+          git checkout -b release/$VERSION
+          git push origin release/$VERSION
+
+      - name: Tag release
+        run: |
+          VERSION=${{ needs.check-release.outputs.version }}
+          git tag v$VERSION
+          git push origin v$VERSION
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-release.outputs.version }}
+          name: Release v${{ needs.check-release.outputs.version }}
+          files: "*.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

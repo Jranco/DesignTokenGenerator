@@ -163,7 +163,6 @@ struct DesignVariableCollectionsParserTests {
 				encoding: .utf8
 			)
 		} catch {
-			print("-- error generating output: \(error)")
 		}
 		
 //		try designModelContainer.variableCollections.forEach { collection in

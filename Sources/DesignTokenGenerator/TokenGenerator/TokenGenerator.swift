@@ -1,5 +1,5 @@
 //
-//  DesignTokenGenerator.swift
+//  TokenGenerator.swift
 //  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 10.03.26.
@@ -17,7 +17,7 @@ import Stencil
 /// - A `DesignVariables.swift` file for non-color variable tokens
 /// - A `ColorTokens.swift` file for color style tokens
 /// - A `FontTokens.swift` file for text style tokens
-final class DesignTokenGenerator {
+final class TokenGenerator {
 
 	/// Raw JSON data exported from Figma, containing all variables and styles.
 	private var json: Data
@@ -345,7 +345,7 @@ final class DesignTokenGenerator {
 	}
 }
 
-private extension DesignTokenGenerator {
+private extension TokenGenerator {
 
 	/// Generates Xcode color asset catalogs from the provided color asset file models.
 	///

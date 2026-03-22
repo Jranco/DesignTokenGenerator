@@ -1,6 +1,6 @@
 //
 //  DesignModelContainer.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 03.03.26.
 //

@@ -1,6 +1,6 @@
 //
 //  RGB.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 09.03.26.
 //

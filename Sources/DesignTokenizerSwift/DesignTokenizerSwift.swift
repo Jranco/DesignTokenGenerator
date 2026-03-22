@@ -4,12 +4,12 @@
 import Foundation
 
 @main
-struct DesignTokenizerSwift {
+struct DesignTokenGenerator {
 	static func main() {
 		let args = CommandLine.arguments
 
 		guard args.count == 3 else {
-			print("Usage: DesignTokenizerSwift <input.json> <export-path>")
+			print("Usage: DesignTokenGenerator <input.json> <export-path>")
 			return
 		}
 
@@ -27,7 +27,7 @@ struct DesignTokenizerSwift {
 }
 
 //@main
-//struct DesignTokenizerSwift {
+//struct DesignTokenGenerator {
 //    static func main() {
 //        print("Hello, world!")
 //		// Sources/MyScript/main.swift

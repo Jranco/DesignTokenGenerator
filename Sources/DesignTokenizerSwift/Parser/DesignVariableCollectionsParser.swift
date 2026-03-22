@@ -1,6 +1,6 @@
 //
 //  DesignVariableCollectionsParser.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 26.12.25.
 //

@@ -1,6 +1,6 @@
 //
 //  ColorAsset.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 22.12.25.
 //

@@ -1,6 +1,6 @@
 //
 //  VariableTokenOutput.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 02.01.26.
 //

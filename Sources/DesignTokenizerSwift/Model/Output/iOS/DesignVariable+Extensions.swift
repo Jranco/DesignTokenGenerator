@@ -1,6 +1,6 @@
 //
 //  DesignVariable+Extensions.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 20.03.26.
 //

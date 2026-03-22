@@ -1,6 +1,6 @@
 //
 //  DesignVariableCollectionsParserTests.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 26.12.25.
 //
@@ -9,7 +9,7 @@ import Testing
 import Foundation
 import Stencil
 
-@testable import DesignTokenizerSwift
+@testable import DesignTokenGenerator
 
 struct DesignVariableCollectionsParserTests {
 

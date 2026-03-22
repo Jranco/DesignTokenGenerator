@@ -1,12 +1,12 @@
 //
 //  TokenLexicalNormalizerTests.swift
-//  DesignTokenizerSwift
+//  DesignTokenGenerator
 //
 //  Created by Thomas Segkoulis on 04.01.26.
 //
 
 import Testing
-@testable import DesignTokenizerSwift
+@testable import DesignTokenGenerator
 
 struct TokenLexicalNormalizerTests {
 

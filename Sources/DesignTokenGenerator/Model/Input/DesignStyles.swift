@@ -180,6 +180,10 @@ enum ColorStyleType: String, Codable {
 
 	/// A radial gradient emanating from a central point.
 	case gradientRadial = "GRADIENT_RADIAL"
+
+	/// A raster image fill, referenced by a stored image hash and rendered
+	/// according to a scale mode (e.g. fill, fit, tile).
+	case image = "IMAGE"
 }
 
 /// A Figma design variable that a ``ColorStyle`` is bound to.

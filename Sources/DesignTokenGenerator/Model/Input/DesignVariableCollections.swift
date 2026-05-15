@@ -28,7 +28,7 @@ struct DesignVariableCollection: Codable {
 // MARK: - Mode
 
 /// Represents a single mode within a variable collection, such as "Light" or "Dark".
-struct DesignVariableMode: Codable {
+struct DesignVariableMode: Codable, Equatable {
 	let id: String
 	let name: String
 }

@@ -23,6 +23,9 @@ final class TokenGenerator {
 	private var json: Data
 	/// The file system path where all generated files will be written.
 	private var exportPath: String
+	/// Determines how light and dark color scheme values are sourced
+	/// from the design token JSON structure.
+	private var colorSchemeSource: ColorSchemeSource
 
 	/// Creates a new `DesignTokenGenerator`, responsible for generating Swift design token files and Xcode color asset catalogs
 	/// from a parsed Figma design model.
@@ -30,11 +33,14 @@ final class TokenGenerator {
 	/// - Parameters:
 	///   - json: Raw JSON data exported from Figma, containing all variables and styles.
 	///   - exportPath: The file system path where all generated files will be written.
+	///   - colorSchemeSource: Determines how light and dark color scheme values are sourced from the design token JSON structure.
 	init(
 		json: Data,
-		exportPath: String
+		exportPath: String,
+		colorSchemeSource: ColorSchemeSource
 	) throws {
-		self.json = json
+		self.colorSchemeSource = colorSchemeSource
+		self.json = colorSchemeSource == .collections ? try! Self.transformDesignTokens(json) : json
 		self.exportPath = exportPath
 	}
 
@@ -244,7 +250,171 @@ final class TokenGenerator {
 
 		print("✅ Generated: \(outputURL.path)")
 	}
-	
+
+	/// Transforms a design token JSON payload into a normalised structure
+	/// where light and dark color scheme values are combined into a single
+	/// variable collection.
+	///
+	/// - Parameters:
+	///   - inputData: Raw JSON data conforming to the design token export format,
+	///                containing a `designModelContainer` with `variableCollections`
+	///                and `styles`.
+	///
+	/// - Returns: JSON data containing a flat `variableCollections` array and
+	///            `styles`, with light and dark values merged where applicable.
+	///
+	/// - Throws: `TokenTransformError.invalidInput` if the JSON structure is
+	///           missing required fields.
+	static func transformDesignTokens(_ inputData: Data) throws -> Data {
+		guard let root = try JSONSerialization.jsonObject(with: inputData) as? [String: Any],
+			  let container = root["designModelContainer"] as? [String: Any],
+			  let collections = container["variableCollections"] as? [[String: Any]],
+			  let styles = container["styles"] as? [String: Any]
+		else {
+			throw TokenTransformError.invalidInput("Missing required fields")
+		}
+
+		var lightCollection: [String: Any]?
+		var darkCollection: [String: Any]?
+		var otherCollections: [[String: Any]] = []
+
+		for collection in collections {
+			switch (collection["name"] as? String)?.lowercased() {
+			case "light": lightCollection = collection
+			case "dark":  darkCollection = collection
+			default:      otherCollections.append(collection)
+			}
+		}
+
+		var resultCollections: [[String: Any]] = []
+
+		if var light = lightCollection, let dark = darkCollection {
+			let darkVariables = dark["variables"] as? [[String: Any]] ?? []
+			let darkByName = Dictionary(
+				darkVariables.compactMap { v -> (String, [String: Any])? in
+					guard let name = v["name"] as? String else { return nil }
+					return (name, v)
+				},
+				uniquingKeysWith: { first, _ in first }
+			)
+
+			var modes = light["modes"] as? [[String: Any]] ?? []
+			let darkModes = dark["modes"] as? [[String: Any]] ?? []
+			let modeInsertAt = min(1, modes.count)
+			modes.insert(contentsOf: darkModes, at: modeInsertAt)
+			light["modes"] = modes
+
+			var mappedDarkNames = Set<String>()
+			var lightVariables = light["variables"] as? [[String: Any]] ?? []
+
+			for i in lightVariables.indices {
+				guard let name = lightVariables[i]["name"] as? String,
+					  let darkVar = darkByName[name] else { continue }
+
+				let darkValues = darkVar["value"] as? [[String: Any]] ?? []
+				var values = lightVariables[i]["value"] as? [[String: Any]] ?? []
+				let insertAt = min(1, values.count)
+				values.insert(contentsOf: darkValues, at: insertAt)
+				lightVariables[i]["value"] = values
+				mappedDarkNames.insert(name)
+			}
+
+			// Append remaining dark variables that are not matched to any respective light ones.
+			let clearPlaceholder: [String: Any] = [
+				"id": "2:0",
+				"data": ["r": 0, "g": 0, "b": 0, "a": 0]
+			]
+
+			let unmapped = darkVariables
+				.filter {
+					guard let name = $0["name"] as? String else { return true }
+					return !mappedDarkNames.contains(name)
+				}
+				.map { var v = $0
+					var values = v["value"] as? [[String: Any]] ?? []
+					values.insert(clearPlaceholder, at: 0)
+					v["value"] = values
+					return v
+				}
+			
+			// Log warning
+			if !unmapped.isEmpty {
+				print("⚠️ Design token mismatch: \(unmapped.count) dark variable(s) have no matching light counterpart — using white placeholder. Names: \(unmapped.compactMap { $0["name"] as? String }.joined(separator: ", "))")
+			}
+
+			lightVariables += unmapped
+
+			light["variables"] = lightVariables
+			light["name"] = "light-dark-combined"
+			resultCollections.append(light)
+		} else {
+			if let light = lightCollection { resultCollections.append(light) }
+			if let dark  = darkCollection  { resultCollections.append(dark)  }
+		}
+
+		resultCollections += otherCollections
+
+		let output: [String: Any] = [
+			"variableCollections": resultCollections,
+			"styles": styles
+		]
+
+		return try JSONSerialization.data(withJSONObject: output, options: [.prettyPrinted])
+	}
+}
+
+private extension TokenGenerator {
+
+	/// Generates Xcode color asset catalogs from the provided color asset file models.
+	///
+	/// Creates a structured directory hierarchy compatible with Xcode's `.xcassets` format,
+	/// writing a `Contents.json` file for each individual color asset.
+	///
+	/// The resulting folder structure will be:
+	/// ```
+	/// <exportPath>/
+	/// └── <name>/
+	///     └── <ColorAssetFile.name>.xcassets/
+	///         └── <ColorAsset.name>.colorset/
+	///             └── Contents.json
+	/// ```
+	///
+	/// - Parameters:
+	///   - name: The name of the root output folder created under `exportPath`.
+	///   - colorAssetFiles: An array of ``ColorAssetFile`` models, each representing
+	///     a single `.xcassets` catalog containing one or more named color assets.
+	/// - Throws: A `FileManager` error if any directory or file operation fails,
+	///   or an encoding error if a ``ColorAsset`` cannot be serialized to JSON.
+	func generateAssets(
+		name: String,
+		colorAssetFiles: [ColorAssetFile]
+	) throws {
+		let rootURL: URL = URL(fileURLWithPath: exportPath).appendingPathComponent(name)
+		try FileManager.default.createDirectory(
+			at: rootURL,
+			withIntermediateDirectories: true
+		)
+		try colorAssetFiles.forEach { colorAssetFile in
+			let rootFolderName = colorAssetFile.name + ".xcassets"
+			let rootFolderURL = rootURL.appendingPathComponent(rootFolderName)
+			try FileManager.default.createDirectory(
+				at: rootFolderURL,
+				withIntermediateDirectories: true
+			)
+			try colorAssetFile.colors.forEach { colorAsset in
+				let folderName = colorAsset.name + ".colorset"
+				let folderURL = rootFolderURL.appendingPathComponent(folderName)
+				try FileManager.default.createDirectory(
+					at: folderURL,
+					withIntermediateDirectories: true
+				)
+				let fileURL = folderURL.appendingPathComponent("Contents.json")
+				let data = try JSONEncoder().encode(colorAsset.colorAsset)
+				try data.write(to: fileURL)
+			}
+		}
+	}
+
 	/// Resolves a fully qualified color name for a given bound variable ID within a color file.
 	///
 	/// - Parameters:
@@ -252,7 +422,7 @@ final class TokenGenerator {
 	///   - boundVariable: The variable ID to match against.
 	///   - fileName: The name of the color asset file, used as the namespace prefix.
 	/// - Returns: A dot-separated name in the format `FileName.ColorName`, or `nil` if not found.
-	private func colorName(
+	func colorName(
 		from colors: [ColorAssetWrapper],
 		for boundVariable: String?,
 		fileName: String
@@ -345,55 +515,23 @@ final class TokenGenerator {
 	}
 }
 
-private extension TokenGenerator {
+/// Determines how light and dark color scheme values are sourced
+/// from the design token JSON structure.
+enum ColorSchemeSource {
 
-	/// Generates Xcode color asset catalogs from the provided color asset file models.
-	///
-	/// Creates a structured directory hierarchy compatible with Xcode's `.xcassets` format,
-	/// writing a `Contents.json` file for each individual color asset.
-	///
-	/// The resulting folder structure will be:
-	/// ```
-	/// <exportPath>/
-	/// └── <name>/
-	///     └── <ColorAssetFile.name>.xcassets/
-	///         └── <ColorAsset.name>.colorset/
-	///             └── Contents.json
-	/// ```
-	///
-	/// - Parameters:
-	///   - name: The name of the root output folder created under `exportPath`.
-	///   - colorAssetFiles: An array of ``ColorAssetFile`` models, each representing
-	///     a single `.xcassets` catalog containing one or more named color assets.
-	/// - Throws: A `FileManager` error if any directory or file operation fails,
-	///   or an encoding error if a ``ColorAsset`` cannot be serialized to JSON.
-	func generateAssets(
-		name: String,
-		colorAssetFiles: [ColorAssetFile]
-	) throws {
-		let rootURL: URL = URL(fileURLWithPath: exportPath).appendingPathComponent(name)
-		try FileManager.default.createDirectory(
-			at: rootURL,
-			withIntermediateDirectories: true
-		)
-		try colorAssetFiles.forEach { colorAssetFile in
-			let rootFolderName = colorAssetFile.name + ".xcassets"
-			let rootFolderURL = rootURL.appendingPathComponent(rootFolderName)
-			try FileManager.default.createDirectory(
-				at: rootFolderURL,
-				withIntermediateDirectories: true
-			)
-			try colorAssetFile.colors.forEach { colorAsset in
-				let folderName = colorAsset.name + ".colorset"
-				let folderURL = rootFolderURL.appendingPathComponent(folderName)
-				try FileManager.default.createDirectory(
-					at: folderURL,
-					withIntermediateDirectories: true
-				)
-				let fileURL = folderURL.appendingPathComponent("Contents.json")
-				let data = try JSONEncoder().encode(colorAsset.colorAsset)
-				try data.write(to: fileURL)
-			}
-		}
-	}
+	/// Light and dark values are defined in separate top-level collections
+	/// named "light" and "dark". The two collections are merged into one,
+	/// with dark variables embedded as an additional mode alongside the
+	/// light variables. Collections where all variables are mapped are
+	/// removed from the output.
+	case collections
+
+	/// Light and dark values are defined as modes within a single collection.
+	/// Each variable already carries values for both modes and no merging
+	/// is required.
+	case modes
+}
+
+enum TokenTransformError: Error {
+	case invalidInput(String)
 }

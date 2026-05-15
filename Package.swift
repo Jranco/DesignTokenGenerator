@@ -29,9 +29,9 @@ let package = Package(
 		.testTarget(
 			  name: "DesignTokenGeneratorTests",
 			  dependencies: ["DesignTokenGenerator"],
-//			  resources: [
-//				  .process("Mocks")
-//			  ]
+			  resources: [
+				  .process("DesignTokenizerSwiftTests/Mocks")
+			  ]
 		  ),
     ]
 )

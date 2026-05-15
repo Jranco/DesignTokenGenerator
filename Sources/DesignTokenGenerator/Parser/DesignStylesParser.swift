@@ -33,9 +33,9 @@ struct DesignStylesParser {
 	/// - Returns: An array of ``TextStyle`` instances.
 	/// - Throws: ``DesignStyleParserError/emptyStyles`` if the text styles array is empty.
 	func textStyles() throws -> [TextStyle] {
-		guard !styles.text.isEmpty else {
-			throw DesignStyleParserError.emptyStyles
-		}
+//		guard !styles.text.isEmpty else {
+//			throw DesignStyleParserError.emptyStyles
+//		}
 		return styles.text
 	}
 
@@ -44,9 +44,9 @@ struct DesignStylesParser {
 	/// - Returns: An array of ``ColorStyle`` instances.
 	/// - Throws: ``DesignStyleParserError/emptyStyles`` if the color styles array is empty.
 	func colorStyles() throws -> [ColorStyle] {
-		guard !styles.color.isEmpty else {
-			throw DesignStyleParserError.emptyStyles
-		}
+//		guard !styles.color.isEmpty else {
+//			throw DesignStyleParserError.emptyStyles
+//		}
 		return styles.color
 	}
 

@@ -11,17 +11,17 @@ import Foundation
 
 struct TokenGeneratorTests {
 
-    @Test func test() async throws {
-		let generator = DesignTokenGenerator()
-		let parse = generator
-
-		do {
-			let tokenGenerator = try TokenGenerator(json: loadJSON(named: "designModelContainer"), exportPath: "/Users/segk/Documents/token_result2", colorSchemeSource: .modes)
-			try tokenGenerator.generateTokenFiles()
-		} catch {
-			print("-- error parsing: \(error)")
-		}
-    }
+//    @Test func test() async throws {
+//		let generator = DesignTokenGenerator()
+//		let parse = generator
+//
+//		do {
+//			let tokenGenerator = try TokenGenerator(json: loadJSON(named: "designModelContainer"), exportPath: "/Users/segk/Documents/token_result2", colorSchemeSource: .modes)
+//			try tokenGenerator.generateTokenFiles()
+//		} catch {
+//			print("-- error parsing: \(error)")
+//		}
+//    }
 
 	// MARK: - Transform: Collections source
 

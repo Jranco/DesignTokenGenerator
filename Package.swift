@@ -31,7 +31,6 @@ let package = Package(
 			  dependencies: ["DesignTokenGenerator"],
 			  resources: [
 				  .process("DesignTokenizerSwiftTests/Mocks"),
-				  .process("DesignTokenizerSwiftTests/Results"),
 				  .process("DesignTokenizerSwiftTests/figmaVars.json")
 			  ]
 		  ),

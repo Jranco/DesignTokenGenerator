@@ -43,7 +43,7 @@ final class TokenGenerator {
 		json: Data,
 		exportPath: String,
 		colorSchemeSource: ColorSchemeSource,
-		platforms: [Platform]
+		platforms: [Platform] = [.xcode]
 	) throws {
 		self.colorSchemeSource = colorSchemeSource
 		self.platforms = platforms

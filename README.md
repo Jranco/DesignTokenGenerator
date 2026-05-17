@@ -17,3 +17,23 @@
 [![CI](https://github.com/Jranco/DesignTokenGenerator/actions/workflows/ci.yml/badge.svg)](https://github.com/Jranco/DesignTokenGenerator/actions/workflows/ci.yml)
 
 Parses design tokens from a JSON and generates respective code in various languages
+
+```
+                        ┌─────────────────────────┐
+                        │   DesignTokenGenerator  │
+  ┌──────────────┐      │                         │      ┌─────────────────────┐
+  │  Figma JSON  │─────▶│  ┌───────────────────┐  │─────▶│  /xcode             │
+  │              │      │  │  Variable Colors  │  │      │  ├─ .xcassets        │
+  │  variables   │      │  │  Style Colors     │  │      │  ├─ ColorTokens.swift│
+  │  styles      │      │  │  Text Styles      │  │      │  ├─ DesignVars.swift │
+  │  collections │      │  │  Design Variables │  │      │  └─ FontTokens.swift │
+  └──────────────┘      │  └───────────────────┘  │      ├─────────────────────┤
+                        │                         │      │  /web               │
+                        │  --platform xcode        │─────▶│  ├─ ColorTokens.css │
+                        │  --platform web          │      │  ├─ DesignVars.css  │
+                        │  --platform android      │      │  └─ FontTokens.css  │
+                        │                         │      ├─────────────────────┤
+                        │  [collections|modes]     │      │  /android           │
+                        └─────────────────────────┘      │  └─ coming soon     │
+                                                          └─────────────────────┘
+```

@@ -30,7 +30,9 @@ let package = Package(
 			  name: "DesignTokenGeneratorTests",
 			  dependencies: ["DesignTokenGenerator"],
 			  resources: [
-				  .process("DesignTokenizerSwiftTests/Mocks")
+				  .process("DesignTokenizerSwiftTests/Mocks"),
+				  .process("DesignTokenizerSwiftTests/Results"),
+				  .process("DesignTokenizerSwiftTests/figmaVars.json")
 			  ]
 		  ),
     ]

@@ -1,0 +1,30 @@
+/* Generated file — do not edit manually. */
+
+@theme {
+{% for file in colorAssetFiles -%}
+{% for color in file.colors -%}
+  --color-{{ file.name | cssIdentifier }}-{{ color.name | cssIdentifier }}: {{ color.light }};
+{% endfor -%}
+{% endfor -%}
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+{% for file in colorAssetFiles -%}
+{% for color in file.colors -%}
+{% if color.hasDarkOverride -%}
+    --color-{{ file.name | cssIdentifier }}-{{ color.name | cssIdentifier }}: {{ color.dark }};
+{% endif -%}
+{% endfor -%}
+{% endfor -%}
+  }
+}
+{% for file in colorAssetFiles -%}
+{% if file.boundColors -%}
+@theme {
+{% for boundColor in file.boundColors -%}
+  --color-{{ boundColor.name | cssIdentifier }}: var(--color-{{ boundColor.boundedColorName | cssIdentifier }});
+{% endfor -%}
+}
+{% endif -%}
+{% endfor -%}

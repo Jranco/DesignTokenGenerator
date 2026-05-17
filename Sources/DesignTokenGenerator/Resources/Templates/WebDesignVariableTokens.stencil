@@ -1,0 +1,18 @@
+/* Generated file — DO NOT EDIT */
+
+@theme {
+{% for enum in enums -%}
+  /* {{ enum.name }} */
+{% for token in enum.tokens -%}
+{% if token.boolValue -%}
+  --{{ enum.name | cssIdentifier }}-{{ token.name | cssIdentifier }}: {{ token.boolValue }};
+{% endif -%}
+{% if token.numberValue -%}
+  --{{ enum.name | cssIdentifier }}-{{ token.name | cssIdentifier }}: {{ token.numberValue }};
+{% endif -%}
+{% if token.stringValue -%}
+  --{{ enum.name | cssIdentifier }}-{{ token.name | cssIdentifier }}: {{ token.stringValue }};
+{% endif -%}
+{% endfor -%}
+{% endfor -%}
+}

@@ -1,0 +1,15 @@
+/* Generated file — do not edit manually. */
+
+@theme {
+{% for style in textStyles -%}
+  --font-size-{{ style.name | cssIdentifier }}: {{ style.fontSize }}px;
+  --font-family-{{ style.name | cssIdentifier }}: '{{ style.fontFamily }}';
+  --letter-spacing-{{ style.name | cssIdentifier }}: {{ style.letterSpacing }}px;
+{% if style.hasLineHeight -%}
+  --line-height-{{ style.name | cssIdentifier }}: {{ style.lineHeight }}px;
+{% endif -%}
+{% if style.paragraphSpacing -%}
+  --paragraph-spacing-{{ style.name | cssIdentifier }}: {{ style.paragraphSpacing }}px;
+{% endif -%}
+{% endfor -%}
+}

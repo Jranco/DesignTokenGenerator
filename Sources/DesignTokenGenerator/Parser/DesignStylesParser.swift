@@ -124,9 +124,6 @@ extension DesignStylesParser {
 	/// - Returns: A ``ColorAssetWrapper`` if at least one color can be resolved, or `nil` otherwise.
 	func colorAssetWrapper(from style: ColorStyle) -> ColorAssetWrapper? {
 		let resolvedColors: [RGB]
-		
-		
-		
 		if let boundValues = style.boundVariable?.value.map(\.data) {
 			resolvedColors = boundValues
 		} else {

@@ -1,17 +1,17 @@
 // Generated file — do not edit manually.
 import UIKit
 
-{% for style in textStyles %}
+{% for style in textStyles -%}
 // MARK: - {{ style.name }}
 
-{% endfor %}
+{% endfor -%}
 extension UIFont {
-{% for style in textStyles %}
+{% for style in textStyles -%}
     static var {{ style.name | swiftVarName }}: UIFont {
         UIFont(
             name: "{{ style.fontFamily }}-{{ style.fontStyle }}",
             size: {{ style.fontSize }}
         ) ?? .systemFont(ofSize: {{ style.fontSize }})
     }
-{% endfor %}
+{% endfor -%}
 }

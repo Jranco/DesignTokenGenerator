@@ -25,20 +25,27 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 		// Text style
 		let textStyles = styles.text
 
+		// Gradient colors
+		let gradientColorAssetFiles = try getGradientColorAssetFiles(styles: designModel.styles)
+
 		/// Code generation
 		try generateAssets(name: "VariableColors", colorAssetFiles: variableColorAssetFiles)
 		try generateAssets(name: "StyleColors", colorAssetFiles: colorStyleAssetFiles)
-		
+		try generateAssets(name: "GradientColors", colorAssetFiles: gradientColorAssetFiles)
+
 		// 1. Variables
 		try generateVariablesTemplate(from: designModel.variableCollections)
-		
+
 		// 2. Fonts
 		try generateFontTokensFile(from: textStyles)
 
 		// 3. Color
-		let allColorFiles = variableColorAssetFiles + colorStyleAssetFiles
+		let allColorFiles = variableColorAssetFiles + colorStyleAssetFiles + gradientColorAssetFiles
 
 		try generateColorTokensFile(from: allColorFiles, colorsBoundToVariables: styles.colorsBoundToVariables)
+
+		// 4. Gradient color tokens
+		try generateGradientColorTokensFile(styles: designModel.styles)
 	}
 	
 	private func generateAssets(name: String, colorAssetFiles: [ColorAssetFile]) throws {
@@ -138,7 +145,7 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 				+ parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
 		}
 
-		let environment = Environment(extensions: [ext])
+		let environment = Environment(extensions: [ext], trimBehaviour: .smart)
 
 		let context: [String: Any] = [
 			"textStyles": textStyles.map { style -> [String: Any] in
@@ -186,6 +193,50 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 		try rendered.write(to: outputURL, atomically: true, encoding: .utf8)
 
 		print("✅ Generated: \(outputURL.path)")
+	}
+
+	func generateGradientColorTokensFile(styles: StyleContainer) throws {
+		let parser = DesignStylesParser(styles: styles)
+		let colorStyles = try parser.colorStyles()
+		let gradientStyles = parser.gradientColorStyles(from: colorStyles)
+		guard !gradientStyles.isEmpty else { return }
+
+		let ext = Extension()
+		ext.registerFilter("swiftVarName") { (value: Any?) -> Any? in
+			guard let string = value as? String else { return value }
+			let parts = string
+				.components(separatedBy: CharacterSet.alphanumerics.inverted)
+				.filter { !$0.isEmpty }
+			guard let first = parts.first else { return value }
+			return first.prefix(1).lowercased() + first.dropFirst()
+				+ parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
+		}
+
+		let environment = Environment(extensions: [ext], trimBehaviour: .smart)
+
+		let context: [String: Any] = [
+			"gradients": gradientStyles.map { style -> [String: Any] in
+				let stops: [[String: Any]] = (style.gradientStops ?? []).map { stop in
+					let pct = Int((stop.position * 100).rounded())
+					return ["assetName": "\(style.name)-\(pct)", "position": stop.position]
+				}
+				return ["name": style.name, "stops": stops]
+			}
+		]
+
+		let templates: [(resource: String, output: String)] = [
+			("XCodeGradientColorTokens+UIKit", "GradientColorTokens+UIKit.swift"),
+			("XCodeGradientColorTokens+SwiftUI", "GradientColorTokens+SwiftUI.swift"),
+		]
+
+		for (resource, output) in templates {
+			let templateURL = Bundle.module.url(forResource: resource, withExtension: "stencil")!
+			let templateString = try String(contentsOf: templateURL, encoding: .utf8)
+			let rendered = try environment.renderTemplate(string: templateString, context: context)
+			let outputURL = URL(fileURLWithPath: exportPath).appendingPathComponent(output)
+			try rendered.write(to: outputURL, atomically: true, encoding: .utf8)
+			print("✅ Generated: \(outputURL.path)")
+		}
 	}
 
 	func generateColorTokensFile(from colorAssetFiles: [ColorAssetFile], colorsBoundToVariables: [ColorAssetWrapper]) throws {

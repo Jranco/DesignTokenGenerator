@@ -377,6 +377,23 @@ struct TokenGeneratorTests {
 		#expect(fgDefaultValues[2]["id"] as? String == "4:2")
 	}
 
+	// MARK: - Gradient parsing
+
+	@Test("Should create DesignModelContainer parsing styles and gradient colors")
+	func testShouldCreateModelFromStylesWithGradientColors() throws {
+		/// GIVEN: The raw JSON from the design system.
+		let jsonData = try loadJSON(named: "design_token_styles_gradient")
+		
+		/// AND: The token generator having `.collections` as color scheme source.
+		let tokenGenerator = try TokenGenerator(json: jsonData, exportPath: "", colorSchemeSource: .collections)
+		
+		/// WHEN: Parsing and decoding.
+		let model = try tokenGenerator.parseDesignModelContainer()
+		
+		print(model.styles.color)
+		
+	}
+	
 	// MARK: - Convenient assertions
 
 	func assertVariableRGB(

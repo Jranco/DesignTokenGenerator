@@ -109,6 +109,36 @@ extension DesignStylesParser {
 		colorStyles.filter { $0.boundVariable != nil }
 	}
 
+	/// Transforms an array of gradient ``ColorStyle`` instances into a single ``ColorAssetFile``.
+	///
+	/// Each gradient stop is expanded into its own ``ColorAssetWrapper``, named
+	/// `{position%}-{styleName}` where position is the stop's position along the
+	/// gradient axis rounded to the nearest integer percentage (e.g. `0`, `50`, `100`).
+	/// All stops are grouped into one file named `"GradientColorStyles"`.
+	/// Styles with no stops are silently skipped.
+	///
+	/// - Parameter colorStyles: The full array of color styles, typically from ``colorStyles()``.
+	/// - Returns: An array containing a single ``ColorAssetFile``, or empty if no gradient stops exist.
+	func gradientColorAssetFiles(from colorStyles: [ColorStyle]) -> [ColorAssetFile] {
+		let wrappers = gradientColorStyles(from: colorStyles).flatMap { style -> [ColorAssetWrapper] in
+			guard let stops = style.gradientStops else { return [] }
+			return stops.map { stop in
+				let pct = Int((stop.position * 100).rounded())
+				return ColorAssetWrapper(
+					id: "\(style.id)-\(pct)",
+					name: "\(style.name)-\(pct)",
+					colorAsset: ColorAsset(
+						colors: [colorEntry(from: stop.color, isDark: false)],
+						info: AssetInfo(author: "xcode", version: 1)
+					),
+					boundVariableID: nil
+				)
+			}
+		}
+		guard !wrappers.isEmpty else { return [] }
+		return [ColorAssetFile(name: "GradientColorStyles", colors: wrappers)]
+	}
+
 	/// Attempts to convert a single ``ColorStyle`` into a ``ColorAssetWrapper``.
 	///
 	/// Color resolution follows this priority order:

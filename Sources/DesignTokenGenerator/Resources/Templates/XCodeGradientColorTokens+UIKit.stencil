@@ -1,0 +1,21 @@
+// Generated file — do not edit manually.
+import UIKit
+
+extension CAGradientLayer {
+{% for gradient in gradients %}
+    static var {{ gradient.name | swiftVarName }}: CAGradientLayer {
+        let layer = CAGradientLayer()
+        layer.colors = [
+{% for stop in gradient.stops %}
+            UIColor(named: "{{ stop.assetName }}", in: .module, compatibleWith: nil)!.cgColor,
+{% endfor %}
+        ]
+        layer.locations = [
+{% for stop in gradient.stops %}
+            {{ stop.position }},
+{% endfor %}
+        ]
+        return layer
+    }
+{% endfor %}
+}

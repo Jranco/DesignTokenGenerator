@@ -60,6 +60,20 @@ extension PlatformTokenGenerating {
 		return try parser.colorAssetFiles()
 	}
 
+	/// Extracts gradient color stops from a ``StyleContainer`` as individual ``ColorAssetFile`` entries.
+	///
+	/// Each gradient stop becomes a separate ``ColorAssetWrapper`` named `{position%}-{styleName}`,
+	/// all grouped under a single file named `"GradientColorStyles"`.
+	///
+	/// - Parameter styles: The raw style container decoded from the Figma model.
+	/// - Returns: An array of ``ColorAssetFile`` models ready for asset generation, or empty if no gradients exist.
+	/// - Throws: Any error raised during style parsing.
+	func getGradientColorAssetFiles(styles: StyleContainer) throws -> [ColorAssetFile] {
+		let parser = DesignStylesParser(styles: styles)
+		let colorStyles = try parser.colorStyles()
+		return parser.gradientColorAssetFiles(from: colorStyles)
+	}
+
 	/// Parses text and color styles from a `StyleContainer`.
 	///
 	/// - Parameter styles: The raw style container decoded from the Figma model.

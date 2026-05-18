@@ -25,15 +25,17 @@ struct WebTokenGenerator: PlatformTokenGenerating {
 		// Text style
 		let textStyles = styles.text
 
-		/// Code generation
+		// Gradient colors
+		let gradientColorAssetFiles = try getGradientColorAssetFiles(styles: designModel.styles)
+
 		// 1. Variables
 		try generateVariablesTemplate(from: designModel.variableCollections)
-		
+
 		// 2. Fonts
 		try generateFontTokensFile(from: textStyles)
 
 		// 3. Color
-		let allColorFiles = variableColorAssetFiles + colorStyleAssetFiles
+		let allColorFiles = variableColorAssetFiles + colorStyleAssetFiles + gradientColorAssetFiles
 
 		try generateColorTokensFile(from: allColorFiles, colorsBoundToVariables: styles.colorsBoundToVariables)
 	}

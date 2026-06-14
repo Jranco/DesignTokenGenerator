@@ -4,7 +4,7 @@ import UIKit
 
 extension Gradient {
 {% for gradient in gradients %}
-    static var {{ gradient.name | swiftVarName }}: Gradient {
+    static var {{ gradient.name }}: Gradient {
         Gradient(stops: [
 {% for stop in gradient.stops %}
             .init(color: Color(UIColor(named: "{{ stop.assetName }}", in: .module, compatibleWith: nil)!), location: {{ stop.position }}),

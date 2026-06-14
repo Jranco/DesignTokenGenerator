@@ -38,6 +38,7 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 
 		// 2. Fonts
 		try generateFontTokensFile(from: textStyles)
+		try generateSwiftUIFontTokensFile(from: textStyles)
 
 		// 3. Color
 		let allColorFiles = variableColorAssetFiles + colorStyleAssetFiles + gradientColorAssetFiles
@@ -132,20 +133,7 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 			withExtension: "stencil"
 		)!
 		let templateString = try String(contentsOf: templateURL, encoding: .utf8)
-
-		let ext = Extension()
-
-		ext.registerFilter("swiftVarName") { (value: Any?) -> Any? in
-			guard let string = value as? String else { return value }
-			let parts = string
-				.components(separatedBy: CharacterSet.alphanumerics.inverted)
-				.filter { !$0.isEmpty }
-			guard let first = parts.first else { return value }
-			return first.prefix(1).lowercased() + first.dropFirst()
-				+ parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
-		}
-
-		let environment = Environment(extensions: [ext], trimBehaviour: .smart)
+		let environment = Environment(trimBehaviour: .smart)
 
 		let context: [String: Any] = [
 			"textStyles": textStyles.map { style -> [String: Any] in
@@ -195,24 +183,70 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 		print("✅ Generated: \(outputURL.path)")
 	}
 
+	func generateSwiftUIFontTokensFile(from textStyles: [TextStyle]) throws {
+		let templateURL = Bundle.module.url(
+			forResource: "FontTokens+SwiftUI",
+			withExtension: "stencil"
+		)!
+		let templateString = try String(contentsOf: templateURL, encoding: .utf8)
+		let environment = Environment(trimBehaviour: .smart)
+
+		let context: [String: Any] = [
+			"textStyles": textStyles.map { style -> [String: Any] in
+				let letterSpacingPt: Double = {
+					switch style.letterSpacing.unit {
+					case .percent: return (style.letterSpacing.value / 100.0) * style.fontSize
+					case .pixels:  return style.letterSpacing.value
+					case .auto:    return 0
+					}
+				}()
+
+				let lineHeightPt: Double? = {
+					switch style.lineHeight.unit {
+					case .percent: return ((style.lineHeight.value ?? 0) / 100.0) * style.fontSize
+					case .pixels:  return style.lineHeight.value
+					case .auto:    return nil
+					}
+				}()
+
+				let textCaseSwift: String = {
+					switch style.textCase {
+					case "UPPER": return "uppercase"
+					case "LOWER": return "lowercase"
+					case "TITLE": return "title"
+					default:      return "original"
+					}
+				}()
+
+				var dict: [String: Any] = [
+					"name":             style.name,
+					"fontFamily":       style.fontName.family,
+					"fontStyle":        style.fontName.style,
+					"fontSize":         style.fontSize,
+					"letterSpacing":    letterSpacingPt,
+					"paragraphSpacing": style.paragraphSpacing,
+					"textCase":         textCaseSwift,
+					"hasLineHeight":    lineHeightPt != nil,
+				]
+				if let lh = lineHeightPt { dict["lineHeight"] = lh }
+				return dict
+			}
+		]
+
+		let rendered = try environment.renderTemplate(string: templateString, context: context)
+		let outputURL = URL(fileURLWithPath: exportPath)
+			.appendingPathComponent("FontTokens+SwiftUI.swift")
+		try rendered.write(to: outputURL, atomically: true, encoding: .utf8)
+		print("✅ Generated: \(outputURL.path)")
+	}
+
 	func generateGradientColorTokensFile(styles: StyleContainer) throws {
 		let parser = DesignStylesParser(styles: styles)
 		let colorStyles = try parser.colorStyles()
 		let gradientStyles = parser.gradientColorStyles(from: colorStyles)
 		guard !gradientStyles.isEmpty else { return }
 
-		let ext = Extension()
-		ext.registerFilter("swiftVarName") { (value: Any?) -> Any? in
-			guard let string = value as? String else { return value }
-			let parts = string
-				.components(separatedBy: CharacterSet.alphanumerics.inverted)
-				.filter { !$0.isEmpty }
-			guard let first = parts.first else { return value }
-			return first.prefix(1).lowercased() + first.dropFirst()
-				+ parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
-		}
-
-		let environment = Environment(extensions: [ext], trimBehaviour: .smart)
+		let environment = Environment(trimBehaviour: .smart)
 
 		let context: [String: Any] = [
 			"gradients": gradientStyles.map { style -> [String: Any] in
@@ -249,7 +283,7 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 
 		let ext = Extension()
 
-		// "My Color Group" → "MyColorGroup"
+		// Collection name → PascalCase Swift struct name (needed regardless of user's token naming convention)
 		ext.registerFilter("swiftTypeName") { (value: Any?) -> Any? in
 			guard let string = value as? String else { return value }
 			return string
@@ -257,18 +291,6 @@ struct XCodeTokenGenerator: PlatformTokenGenerating {
 				.filter { !$0.isEmpty }
 				.map { $0.prefix(1).uppercased() + $0.dropFirst() }
 				.joined()
-		}
-
-		// "My Color Name" → "myColorName"
-		ext.registerFilter("swiftVarName") { (value: Any?) -> Any? in
-			guard let string = value as? String else { return value }
-			let parts = string
-				.components(separatedBy: CharacterSet.alphanumerics.inverted)
-				.filter { !$0.isEmpty }
-			guard let first = parts.first else { return value }
-			let camel = first.prefix(1).lowercased() + first.dropFirst()
-				+ parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
-			return camel
 		}
 
 		let environment = Environment(extensions: [ext])

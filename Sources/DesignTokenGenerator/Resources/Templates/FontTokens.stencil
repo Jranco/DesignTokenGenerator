@@ -6,7 +6,7 @@ extension UIFont {
 
     // MARK: - {{ style.name }}
 
-    static var {{ style.name | swiftVarName }}: UIFont {
+    static var {{ style.name }}: UIFont {
         UIFont(
             name: "{{ style.fontFamily }}-{{ style.fontStyle }}",
             size: {{ style.fontSize }}

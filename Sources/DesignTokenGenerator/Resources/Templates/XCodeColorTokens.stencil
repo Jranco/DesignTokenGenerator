@@ -7,13 +7,13 @@ import UIKit
 extension UIColor {
     struct {{ file.name | swiftTypeName }} {
         {% for color in file.colors -%}
-        static var {{ color.name | swiftVarName }}: UIColor {
+        static var {{ color.name }}: UIColor {
             UIColor(named: "{{ color.name }}", in: .module, compatibleWith: nil)!
         }
         {% endfor -%}
 		{% if file.boundColors -%}
 		{% for boundColor in file.boundColors -%}
-		static var {{ boundColor.name | swiftVarName }} = UIColor.{{ boundColor.boundedColorName }}
+		static var {{ boundColor.name }} = UIColor.{{ boundColor.boundedColorName }}
 		{% endfor -%}
 		{% endif -%}
     }

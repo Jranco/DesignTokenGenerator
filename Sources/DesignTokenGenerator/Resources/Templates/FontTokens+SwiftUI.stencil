@@ -1,0 +1,93 @@
+// Generated file — do not edit manually.
+import SwiftUI
+
+// MARK: - Font extensions
+
+extension Font {
+{% for style in textStyles %}
+
+    // MARK: {{ style.name }}
+
+    static var {{ style.name }}: Font {
+        .custom("{{ style.fontFamily }}-{{ style.fontStyle }}", size: {{ style.fontSize }})
+    }
+{% endfor %}
+}
+
+// MARK: - Typography tokens
+
+struct TypographyToken {
+    let font: Font
+    let fontSize: CGFloat
+    let letterSpacing: CGFloat
+{% if style.hasLineHeight %}
+    let lineHeight: CGFloat?
+{% endif %}
+    let paragraphSpacing: CGFloat
+    let textCase: TextCase
+
+    enum TextCase {
+        case original, uppercase, lowercase, title
+    }
+}
+
+extension TypographyToken {
+{% for style in textStyles %}
+
+    // MARK: {{ style.name }}
+
+    static var {{ style.name }}: TypographyToken {
+        TypographyToken(
+            font: .custom("{{ style.fontFamily }}-{{ style.fontStyle }}", size: {{ style.fontSize }}),
+            fontSize: {{ style.fontSize }},
+            letterSpacing: {{ style.letterSpacing }},
+{% if style.hasLineHeight %}
+            lineHeight: {{ style.lineHeight }},
+{% else %}
+            lineHeight: nil,
+{% endif %}
+            paragraphSpacing: {{ style.paragraphSpacing }},
+            textCase: .{{ style.textCase }}
+        )
+    }
+{% endfor %}
+}
+
+// MARK: - View modifier
+
+struct TypographyModifier: ViewModifier {
+    let token: TypographyToken
+
+    func body(content: Content) -> some View {
+        content
+            .font(token.font)
+            .kerning(token.letterSpacing)
+            .lineSpacing(token.lineHeight.map { max(0, $0 - token.fontSize) } ?? 0)
+    }
+}
+
+extension View {
+
+    /// Applies a full typography token — font, kerning, line spacing — in one call.
+    ///
+    /// Usage:
+    /// ```swift
+    /// Text("Hello")
+    ///     .typography(.componentsTypographyChip)
+    /// ```
+    func typography(_ token: TypographyToken) -> some View {
+        modifier(TypographyModifier(token: token))
+    }
+{% for style in textStyles %}
+
+    /// Applies the `{{ style.name }}` typography token.
+    /// - Font: {{ style.fontFamily }} {{ style.fontStyle }}, {{ style.fontSize }}pt
+    /// - Letter spacing: {{ style.letterSpacing }}pt
+{% if style.hasLineHeight %}
+    /// - Line height: {{ style.lineHeight }}pt
+{% endif %}
+    func {{ style.name }}() -> some View {
+        typography(.{{ style.name }})
+    }
+{% endfor %}
+}
